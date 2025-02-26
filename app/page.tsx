@@ -5,16 +5,16 @@ import styles from "./page.module.css";
 
 const Home = () => {
   const categories = {
-    "Basic chat": "basic-chat",
-    "Function calling": "function-calling",
-    "File search": "file-search",
-    All: "all",
+    "GO": "basic-chat",
+    // "GO": "function-calling",
+    // "File search": "file-search",
+    // All: "all",
   };
 
   return (
     <main className={styles.main}>
       <div className={styles.title}>
-        Explore sample apps built with Assistants API
+       Toutes les informations sur le Festival Classiquicime Megève 2025
       </div>
       <div className={styles.container}>
         {Object.entries(categories).map(([name, url]) => (

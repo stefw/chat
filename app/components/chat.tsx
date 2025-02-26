@@ -18,9 +18,14 @@ const UserMessage = ({ text }: { text: string }) => {
 };
 
 const AssistantMessage = ({ text }: { text: string }) => {
+  // Fonction pour nettoyer les références de citation comme 【8:7†source】
+  const cleanText = (text: string) => {
+    return text.replace(/【[^】]*】/g, '');
+  };
+
   return (
     <div className={styles.assistantMessage}>
-      <Markdown>{text}</Markdown>
+      <Markdown>{cleanText(text)}</Markdown>
     </div>
   );
 };
@@ -61,12 +66,30 @@ const Chat = ({
   functionCallHandler = () => Promise.resolve(""), // default to return empty string
 }: ChatProps) => {
   const [userInput, setUserInput] = useState("");
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<MessageProps[]>([]);
   const [inputDisabled, setInputDisabled] = useState(false);
   const [threadId, setThreadId] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Suggestions de questions spécifiques au Festival Classiquicime Megève 2025
+  const suggestions = [
+    "Quels concerts sont prévus pour le Festival Classiquicime 2025 ?",
+    "Quels artistes seront présents au Festival ?",
+    "Quand aura lieu le prochain concert à Megève ?",
+    "Où puis-je acheter des billets pour le Festival ?",
+    "Y a-t-il des activités pour les enfants pendant le Festival ?",
+    "Quels sont les tarifs des concerts ?",
+  ];
+
+  // Fonction pour sélectionner une suggestion
+  const handleSuggestionClick = (suggestion: string) => {
+    setUserInput(suggestion);
+  };
+
+  // Vérifier si c'est le premier chargement (aucun message)
+  const isFirstLoad = messages.length === 0;
 
   // automatically scroll to bottom of chat
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -143,9 +166,11 @@ const Chat = ({
     if (delta.value != null) {
       appendToLastMessage(delta.value);
     };
+    /* Commenté - annotations désactivées
     if (delta.annotations != null) {
       annotateLastMessage(delta.annotations);
     }
+    */
   };
 
   // imageFileDone - show image in chat
@@ -229,6 +254,7 @@ const Chat = ({
     setMessages((prevMessages) => [...prevMessages, { role, text }]);
   };
 
+  /* Commenté - fonction d'annotations désactivée
   const annotateLastMessage = (annotations) => {
     setMessages((prevMessages) => {
       const lastMessage = prevMessages[prevMessages.length - 1];
@@ -247,13 +273,52 @@ const Chat = ({
     });
     
   }
+  */
 
   return (
     <div className={styles.chatContainer}>
+      <div className={styles.chatHeader}>
+        <div className={styles.chatTitle}>Festival Classiquicime Megève 2025 <br/>Concert Musique Classique</div>
+        <div className={styles.chatStatus}>
+          <div className={styles.statusDot}></div>
+          En ligne
+        </div>
+      </div>
       <div className={styles.messages}>
-        {messages.map((msg, index) => (
-          <Message key={index} role={msg.role} text={msg.text} />
-        ))}
+        {isFirstLoad ? (
+          <div className={styles.emptyStateContainer}>
+            <div className={styles.emptyStateIcon}>🎻</div>
+            <div className={styles.emptyStateTitle}>Bienvenue au Festival Classiquicime Megève 2025</div>
+            <div className={styles.emptyStateDescription}>
+              Posez vos questions sur le programme, les artistes, les lieux de concert, les tarifs ou toute autre information concernant le festival.
+            </div>
+            <div className={styles.suggestionsContainer}>
+              <div className={styles.suggestionsTitle}>Essayez ces questions :</div>
+              {suggestions.map((suggestion, index) => (
+                <button
+                  key={index}
+                  className={styles.suggestionButton}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            {messages.map((msg, index) => (
+              <Message key={index} role={msg.role} text={msg.text} />
+            ))}
+            {inputDisabled && (
+              <div className={styles.typingIndicator}>
+                <div className={styles.typingDot}></div>
+                <div className={styles.typingDot}></div>
+                <div className={styles.typingDot}></div>
+              </div>
+            )}
+          </>
+        )}
         <div ref={messagesEndRef} />
       </div>
       <form
@@ -265,14 +330,14 @@ const Chat = ({
           className={styles.input}
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
-          placeholder="Enter your question"
+          placeholder="Quelle est votre question sur le Festival ?"
         />
         <button
           type="submit"
           className={styles.button}
           disabled={inputDisabled}
         >
-          Send
+          Envoyer
         </button>
       </form>
     </div>
