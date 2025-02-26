@@ -25,7 +25,21 @@ const AssistantMessage = ({ text }: { text: string }) => {
 
   return (
     <div className={styles.assistantMessage}>
-      <Markdown>{cleanText(text)}</Markdown>
+      <Markdown
+        components={{
+          ul: ({ children }) => <ul className={styles.markdownUl}>{children}</ul>,
+          ol: ({ children }) => <ol className={styles.markdownOl}>{children}</ol>,
+          li: ({ children }) => <li className={styles.markdownLi}>{children}</li>,
+          a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>,
+          code: ({ children, className }) => {
+            const language = className ? className.replace('language-', '') : '';
+            return <code className={`${styles.markdownCode} ${language ? styles[language] : ''}`}>{children}</code>;
+          },
+          pre: ({ children }) => <pre className={styles.markdownPre}>{children}</pre>,
+        }}
+      >
+        {cleanText(text)}
+      </Markdown>
     </div>
   );
 };
@@ -73,12 +87,14 @@ const Chat = ({
 
   // Suggestions de questions spécifiques au Festival Classiquicime Megève 2025
   const suggestions = [
-    "Quels concerts sont prévus pour le Festival Classiquicime 2025 ?",
-    "Quels artistes seront présents au Festival ?",
-    "Quand aura lieu le prochain concert à Megève ?",
+    "Détaille le programme",
+    "Quels sont les partenaires ?",
+    "Quels artistes au Festival ?",
+    "Venir de Paris en voiture ?",
     "Où puis-je acheter des billets pour le Festival ?",
     "Y a-t-il des activités pour les enfants pendant le Festival ?",
     "Quels sont les tarifs des concerts ?",
+    "Détaille Rave-L Party"
   ];
 
   // Fonction pour sélectionner une suggestion
