@@ -139,8 +139,8 @@ const Chat = ({
         throw new Error("Aucune donnée reçue");
       }
 
-      const reader = data.getReader();
-      const stream = new AssistantStream(reader);
+      // Utiliser la méthode statique fromReadableStream au lieu du constructeur
+      const stream = AssistantStream.fromReadableStream(data);
       handleReadableStream(stream);
     } catch (error) {
       console.error("Erreur lors de l'envoi du message:", error);
@@ -174,8 +174,8 @@ const Chat = ({
         throw new Error("Aucune donnée reçue");
       }
 
-      const reader = data.getReader();
-      const stream = new AssistantStream(reader);
+      // Utiliser la méthode statique fromReadableStream au lieu du constructeur
+      const stream = AssistantStream.fromReadableStream(data);
       handleReadableStream(stream);
     } catch (error) {
       console.error("Erreur lors de la soumission des résultats d'action:", error);
