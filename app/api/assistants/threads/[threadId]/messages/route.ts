@@ -19,6 +19,7 @@ export async function POST(request, { params: { threadId } }) {
       assistant_id: assistantId,
     });
 
+    
     // Ajouter un gestionnaire d'erreur pour le stream
     stream.on('error', (error) => {
       console.error('Stream error:', error);
