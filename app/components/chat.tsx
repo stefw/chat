@@ -100,51 +100,94 @@ const Chat = ({
   // create a new threadID when chat component created
   useEffect(() => {
     const createThread = async () => {
-      const res = await fetch(`/api/assistants/threads`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      setThreadId(data.threadId);
+      try {
+        const response = await fetch("/api/assistants/threads", {
+          method: "POST",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+
+        const { threadId: newThreadId } = await response.json();
+        setThreadId(newThreadId);
+      } catch (error) {
+        console.error("Erreur lors de la création du thread:", error);
+        // Afficher un message d'erreur dans l'interface
+        appendMessage("assistant", "Désolé, une erreur s'est produite lors de l'initialisation du chat. Veuillez rafraîchir la page.");
+      }
     };
     createThread();
   }, []);
 
-  const sendMessage = async (text) => {
-    const response = await fetch(
-      `/api/assistants/threads/${threadId}/messages`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          content: text,
-        }),
-      }
-    );
-    const stream = AssistantStream.fromReadableStream(response.body);
-    handleReadableStream(stream);
-  };
-
-  const submitActionResult = async (runId, toolCallOutputs) => {
-    const response = await fetch(
-      `/api/assistants/threads/${threadId}/actions`,
-      {
+  const submitMessage = async (content: string) => {
+    try {
+      const response = await fetch(`/api/assistants/threads/${threadId}/messages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          runId: runId,
-          toolCallOutputs: toolCallOutputs,
-        }),
+        body: JSON.stringify({ content }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
       }
-    );
-    const stream = AssistantStream.fromReadableStream(response.body);
-    handleReadableStream(stream);
+
+      const data = response.body;
+      if (!data) {
+        throw new Error("Aucune donnée reçue");
+      }
+
+      const reader = data.getReader();
+      const stream = new AssistantStream(reader);
+      handleReadableStream(stream);
+    } catch (error) {
+      console.error("Erreur lors de l'envoi du message:", error);
+      appendMessage("assistant", "Désolé, une erreur s'est produite lors de l'envoi de votre message. Veuillez réessayer.");
+      setInputDisabled(false);
+    }
+  };
+
+  const submitActionResult = async (runId, toolCallOutputs) => {
+    try {
+      const response = await fetch(
+        `/api/assistants/threads/${threadId}/actions`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            runId,
+            toolCallOutputs,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
+      }
+
+      const data = response.body;
+      if (!data) {
+        throw new Error("Aucune donnée reçue");
+      }
+
+      const reader = data.getReader();
+      const stream = new AssistantStream(reader);
+      handleReadableStream(stream);
+    } catch (error) {
+      console.error("Erreur lors de la soumission des résultats d'action:", error);
+      appendMessage("assistant", "Désolé, une erreur s'est produite lors du traitement de votre demande. Veuillez réessayer.");
+      setInputDisabled(false);
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!userInput.trim()) return;
-    sendMessage(userInput);
+    submitMessage(userInput);
     setMessages((prevMessages) => [
       ...prevMessages,
       { role: "user", text: userInput },
@@ -230,6 +273,20 @@ const Chat = ({
       if (event.event === "thread.run.requires_action")
         handleRequiresAction(event);
       if (event.event === "thread.run.completed") handleRunCompleted();
+    });
+
+    // Gestion des erreurs du stream
+    stream.on("error", (error) => {
+      console.error("Stream error:", error);
+      // Afficher un message d'erreur à l'utilisateur
+      appendMessage("assistant", "Désolé, une erreur s'est produite. Veuillez réessayer votre question.");
+      setInputDisabled(false);
+    });
+
+    // Gestion de la fin du stream
+    stream.on("end", () => {
+      // Assurer que l'input est réactivé même si completed n'est pas reçu
+      setInputDisabled(false);
     });
   };
 
